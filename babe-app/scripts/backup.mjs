@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
+import {fileURLToPath} from 'node:url';
+const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const dir=path.resolve(process.env.DATA_DIR||path.join(base,'data'));
+const dbFile=path.join(dir,'babe.sqlite');
+if(!fs.existsSync(dbFile))throw new Error('Banco não encontrado; inicialize o servidor primeiro.');
+const backups=path.join(dir,'backups');fs.mkdirSync(backups,{recursive:true,mode:0o700});
+const dest=path.join(backups,`babe-${new Date().toISOString().replace(/[:.]/g,'-')}.sqlite`);
+const db=new DatabaseSync(dbFile);db.exec('PRAGMA busy_timeout=10000');
+db.exec(`VACUUM INTO '${dest.replace(/'/g,"''")}'`);db.close();fs.chmodSync(dest,0o600);
+const verify=new DatabaseSync(dest,{readOnly:true});const check=verify.prepare('PRAGMA integrity_check').get();verify.close();if(Object.values(check)[0]!=='ok')throw new Error('Backup não passou na verificação de integridade.');
+console.log('Backup criado e integridade verificada.');

@@ -1,0 +1,10 @@
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {DatabaseSync} from 'node:sqlite';
+import {randomBytes,scryptSync} from 'node:crypto';
+const password=process.env.ADMIN_PASSWORD;
+if(typeof password!=='string'||password.length<16||password.length>256)throw new Error('Defina ADMIN_PASSWORD com 16 a 256 caracteres no ambiente seguro.');
+const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const db=new DatabaseSync(path.join(path.resolve(process.env.DATA_DIR||path.join(base,'data')),'babe.sqlite'));
+const salt=randomBytes(32).toString('hex'),hash=scryptSync(password,salt,64,{N:32768,r:8,p:3,maxmem:64*1024*1024}).toString('hex');
+db.exec('BEGIN IMMEDIATE');try{const result=db.prepare('UPDATE admin SET username=?,salt=?,hash=? WHERE id=1').run(process.env.ADMIN_USERNAME||'admin',salt,hash);if(result.changes!==1)throw new Error('Administrador não encontrado.');db.exec('DELETE FROM sessions; COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}db.close();delete process.env.ADMIN_PASSWORD;console.log('Senha atualizada. Todas as sessões anteriores foram encerradas.');

@@ -1,0 +1,9 @@
+{
+  "name": "babe-podologia",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BABE site and authenticated backend with shared SQLite storage",
+  "engines": {"node": ">=24.19.0 <25"},
+  "scripts": {"start":"node --env-file-if-exists=.env server.mjs", "test":"node --test tests/*.test.mjs", "check":"node scripts/check.mjs", "security":"node scripts/security.mjs", "verify":"npm run check && npm test && npm run security", "backup":"node --env-file-if-exists=.env scripts/backup.mjs", "admin:reset":"node --env-file-if-exists=.env scripts/reset-admin.mjs"}
+}
